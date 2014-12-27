@@ -22,3 +22,5 @@ firstAtProportion p = let inner [] _ = error "Proprotion not reached!"
                                                      then inner ns (1 + pos, 1 + tot)
                                                      else inner ns (pos, 1 + tot)
                       in inner [1..] (0, 0)
+
+main = putStrLn (show (firstAtProportion (99/100)))
