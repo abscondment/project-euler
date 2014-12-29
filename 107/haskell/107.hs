@@ -3,9 +3,10 @@ import Control.Monad
 import Data.Char (chr)
 import Data.List (nub, sort, sortBy)
 import Data.Ord (comparing)
+import Data.Graph.Inductive.Basic (undir)
 import Data.Graph.Inductive.Graph (Graph, Node, LEdge, LPath(LP), LNode, emap, labEdges, mkGraph)
 import Data.Graph.Inductive.PatriciaTree (Gr)
-import Data.Graph.Inductive.Query.MST (msTree, msTreeAt)
+import Data.Graph.Inductive.Query.MST (msPath, msTree, msTreeAt)
 import Data.Graph.Inductive.Internal.RootPath (getDistance)
 
 
@@ -33,29 +34,30 @@ readEdges c = (nub .
                  then -1
                  else read s
 
-readGraph :: String -> Gr Char Int
+readGraph :: String -> Gr Int Int
 readGraph c = let edges :: [LEdge Int]
                   edges = readEdges c
-                  nodes :: [LNode Char]
+                  nodes :: [LNode Int]
                   nodes = zip
-                          (nub (concatMap (\(a, b, w) -> [a, b]) edges))
-                          (map (\c -> chr (c + 64)) [1..])
-              in mkGraph nodes edges
+                          ((sort . nub . (concatMap (\(a, b, w) -> [a, b]))) edges)
+                          -- (map (\c -> chr (c + 64)) [1..])
+                          [1..]
+              in undir (mkGraph nodes edges)
 
-sumWeights gr = (sum . (map (\(_, _, w) -> w)) . labEdges) gr
+uweights gr = ((\s -> div s 2) . sum . (map (\(_, _, w) -> w)) . labEdges) gr
 
-mstWeights gr = (-- sum .
-                 (sortBy (comparing fst)) .
-                 nub .
-                 (concatMap (\(LP p)-> p)) .
-                 msTree) gr
+treeWeights tr = (sum .
+                  (map snd) .
+                  nub .
+                  (concatMap (\(LP p)-> p))) tr
 
 load fname =
   do
     contents <- readFile fname
     let graph = readGraph contents
-        totWeight = sumWeights graph
-        minWeight = mstWeights graph
+        totWeight = uweights graph
+        mst =  msTree graph
+        minWeight = treeWeights mst
     print $ totWeight
     print $ minWeight
-    -- print $ totWeight - minWeight
+    print $ totWeight - minWeight
